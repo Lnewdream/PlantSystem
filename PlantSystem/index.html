@@ -6,7 +6,6 @@
     <title>多作物病害知识与防治系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -18,35 +17,58 @@
             </div>
             <h1 class="text-lg font-bold tracking-tight">植物病害知识与防治系统</h1>
         </div>
-
         <div class="flex gap-12" id="nav-menu">
-            <button data-target="home" class="nav-btn active-nav">诊断中心</button>
-            <button data-target="library" class="nav-btn">病健百科</button>
-            <button data-target="system" class="nav-btn">防管记录</button>
+            <button data-target="knowledge" class="nav-btn active-nav">知识查询</button>
+            <button data-target="crops" class="nav-btn">作物图鉴</button>
+            <button data-target="papers" class="nav-btn">科研论文</button>
+            <button data-target="records" class="nav-btn">农事记录</button>
         </div>
         <div class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest">
             <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
             在线就绪
         </div>
     </nav>
-    <main class="pt-24 px-10 max-w-[1600px] mx-auto pb-10 relative">
-        <div id="view-home" class="page-view active-view space-y-8">
-            <h2 class="text-2xl font-bold text-white mb-4">欢迎来到诊断中心</h2>
-            <p class="text-slate-400"></p>
-        </div>
-        <div id="view-library" class="page-view space-y-8">
-            <h2 class="text-2xl font-bold text-white mb-4">作物病健百科库</h2>
-
-        </div>
-
-        <div id="view-system" class="page-view space-y-8">
-            <h2 class="text-2xl font-bold text-white mb-4">历史防管与农事记录</h2>
-            <div id="record-list" class="space-y-4">
-
+        <!-- 主程序 -->
+<main class="pt-24 px-10 max-w-[1600px] mx-auto pb-10 relative">
+    <div id="view-knowledge" class="page-view active-view space-y-6">
+        <div class="main-card p-8 flex items-center justify-between gap-6">
+            <div class="relative flex-1">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                <input type="text" id="search-input" placeholder="输入病害名称、作物或症状关键字实时搜索..." class="w-full bg-[#1e293b] text-white rounded-xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-green-500 transition-all border border-white/5">
+            </div>
+            <div class="flex gap-3" id="filter-tags">
+                <button data-filter="all" class="filter-btn active-filter px-6 py-4 rounded-xl text-sm font-bold bg-[#1e293b] text-white border border-transparent">全部</button>
+                <button data-filter="水稻" class="filter-btn px-6 py-4 rounded-xl text-sm font-bold bg-[#1e293b] text-slate-400 border border-transparent hover:text-white">水稻</button>
+                <button data-filter="番茄" class="filter-btn px-6 py-4 rounded-xl text-sm font-bold bg-[#1e293b] text-slate-400 border border-transparent hover:text-white">番茄</button>
             </div>
         </div>
-
-    </main>
+        <div id="knowledge-grid" class="grid grid-cols-3 gap-6"></div>
+    </div>
+    <div id="view-crops" class="page-view space-y-8"><h2 class="text-2xl font-bold">作物图鉴</h2></div>
+    <div id="view-papers" class="page-view space-y-6">
+    <div class="flex items-end justify-between border-b border-white/10 pb-4 mb-6">
+        <div><h2 class="text-3xl font-black text-white">病害论文精选</h2><p class="text-green-500 text-xs font-bold tracking-[0.2em] mt-1">RESEARCH PAPERS & CITATIONS</p></div>
+    </div>
+    <div id="papers-list" class="space-y-4"></div>
+</div>
+<div id="view-records" class="page-view space-y-6">
+    <div class="main-card p-6 flex gap-4">
+        <div class="flex-1 space-y-3">
+            <input type="text" id="record-title" placeholder="输入记录标题（如：A区番茄施药记录）" class="w-full bg-[#1e293b] text-white rounded-lg px-4 py-3 outline-none focus:ring-1 focus:ring-green-500 border border-white/5 text-sm">
+            <textarea id="record-content" rows="2" placeholder="详细记录农事操作、发现的症状或用药剂量..." class="w-full bg-[#1e293b] text-white rounded-lg px-4 py-3 outline-none focus:ring-1 focus:ring-green-500 border border-white/5 text-sm"></textarea>
+        </div>
+        <button id="btn-add-record" class="bg-green-600 hover:bg-green-500 text-white font-bold px-8 rounded-lg transition-all flex flex-col items-center justify-center gap-2"><i data-lucide="pen-tool" class="w-5 h-5"></i>保存记录</button>
+    </div>
+    <div id="record-list" class="space-y-4"></div>
+</div>
+    <div id="detail-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modal-overlay"></div>
+        <div class="relative bg-[#0f172a] border border-white/10 w-full max-w-3xl rounded-3xl p-10 shadow-2xl scale-95 opacity-0 transition-all" id="modal-content">
+            <button id="close-modal" class="absolute top-6 right-6 text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+</main>
     <script type="module" src="./js/main.js"></script>
 </body>
 </html>
