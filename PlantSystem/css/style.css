@@ -35,7 +35,7 @@ body {
         transform: translateY(0);
     }
 }
-
+}
 .main-card {
     background-color: #0f172a;
     border-radius: 1.5rem;
@@ -47,3 +47,10 @@ body {
 /* 论文摘要 */
 .abstract-content {max-height: 0;overflow: hidden;transition: max-height 0.4s cubic-bezier(0, 1, 0, 1);opacity: 0.5;}
 .abstract-content.expanded {max-height: 500px;opacity: 1;}
+
+.crop-card {overflow: hidden; position: relative; border-radius: 1.25rem; cursor: pointer; aspect-ratio: 3/4; border: 1px solid rgba(255,255,255,0.05);}
+.crop-img {width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);}
+.crop-card:hover .crop-img {transform: scale(1.1);}
+
+.crop-overlay {position: absolute; inset: 0; background: linear-gradient(to top, rgba(3,7,18,1) 0%, rgba(3,7,18,0.4) 50%, transparent 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; transition: background 0.3s;}
+.crop-card:hover .crop-overlay {background: linear-gradient(to top, rgba(22,101,52,0.9) 0%, rgba(3,7,18,0.4) 60%, transparent 100%);}
