@@ -42,6 +42,7 @@
             <button data-target="papers" class="nav-btn">科研论文</button>
             <button data-target="records" class="nav-btn">农事记录</button>
             <button data-target="refs" class="nav-btn">参考/说明</button>
+            <button data-target="about" class="nav-btn">使用与联系</button>
         </div>
         <div class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>在线查询</div>
     </nav>
@@ -98,10 +99,9 @@
             </div>
             
             <div class="grid grid-cols-2 gap-6">
-                <!-- 公开数据集卡片 -->
+                <!-- 公开数据集 -->
                 <div class="main-card p-6 flex flex-col">
                     <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 shrink-0"><i data-lucide="database" class="w-5 h-5 text-green-500"></i>公开数据集 (38)</h3>
-                    <!-- 增加了固定高度和滚动条 -->
                     <ul class="space-y-3 text-sm text-slate-400 overflow-y-auto max-h-[500px] custom-scrollbar pr-4">
                         <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">01.</span><a href="https://www.kaggle.com/datasets/vipoooool/new-plant-diseases-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/vipoooool/new-plant-diseases-dataset</a></li>
                         <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">02.</span><a href="https://www.kaggle.com/datasets/sujaykapadnis/banana-disease-recognition-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/sujaykapadnis/banana-disease-recognition-dataset</a></li>
@@ -144,10 +144,9 @@
                     </ul>
                 </div>
 
-                <!-- 参考文献卡片 -->
+                <!-- 参考文献 -->
                 <div class="main-card p-6 flex flex-col">
                     <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 shrink-0"><i data-lucide="book-marked" class="w-5 h-5 text-green-500"></i>参考文献 (25)</h3>
-                    <!-- 增加了固定高度和滚动条 -->
                     <ul class="space-y-4 text-sm text-slate-400 overflow-y-auto max-h-[500px] custom-scrollbar pr-4">
                         <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[1]</span>Zhang K., Wu Q., Chen Y. Detecting soybean leaf disease from synthetic image using multi-feature fusion faster R-CNN. Computers and Electronics in Agriculture, 2021. 183, 106064.</li>
                         <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[2]</span>Vaswani A., Shazeer N., Parmar N., et al., Attention is all you need. Advances in neural information processing systems, 2017. 30.</li>
@@ -178,7 +177,90 @@
                 </div>
             </div>
         </div>
+        <!-- 系统使用说明与联系我们页 -->
+        <div id="view-about" class="page-view space-y-8">
+            <div class="border-b border-white/10 pb-4">
+                <h2 class="text-3xl font-black text-white">系统使用说明与联系我们</h2>
+                <p class="text-green-500 text-xs font-bold tracking-[0.2em] mt-1">USER MANUAL & CONTACT</p>
+            </div>
 
+            <div class="grid grid-cols-12 gap-8">
+                <!-- 左侧：使用说明 -->
+                <div class="col-span-7 space-y-6">
+                    <div class="main-card p-8 h-full">
+                        <h3 class="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                            <i data-lucide="book-open-check" class="text-green-500 w-6 h-6"></i>系统功能与操作指南
+                        </h3>
+                        <div class="space-y-8">
+                            <div class="flex gap-4">
+                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20">
+                                    <span class="text-green-500 font-bold">1</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-lg mb-2">多维知识检索与防管转化</h4>
+                                    <p class="text-sm text-slate-400 leading-relaxed">本系统提供纯前端毫秒级检索。在「知识查询」页，您可以通过输入作物、病害名称搜索权威防治方案。点击卡片右下角的“加入防管记录”，即可将专家级方案一键转存至您的本地日程中。</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20">
+                                    <span class="text-green-500 font-bold">2</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-lg mb-2">文献追踪与图谱比对</h4>
+                                    <p class="text-sm text-slate-400 leading-relaxed">在「科研论文」页，汇聚了前沿农学期刊的文献摘要，点击可展开阅读，并支持一键收藏留痕；在「病健图谱」页，您可以对照本地高精度叶片样本，及早发现田间潜在风险。</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20">
+                                    <span class="text-green-500 font-bold">3</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-lg mb-2">极致安全的本地数据留痕</h4>
+                                    <p class="text-sm text-slate-400 leading-relaxed">本系统采用无后端(Serverless)先进架构。您在系统内产生的所有农事记录、检索痕迹、文献收藏，均加密保存在您当前浏览器的本地存储(Local Storage)中。支持随时一键导出 JSON 文件备份，保护农业数据隐私。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 联系我们 -->
+                <div class="col-span-5 space-y-6">
+                    <div class="main-card p-8 border-t-4 border-green-500 relative overflow-hidden h-full">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-green-500/10 rounded-full blur-3xl"></div>
+                        <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3 relative z-10">
+                            <i data-lucide="building-2" class="text-green-500 w-6 h-6"></i>山东农业大学大数据中心
+                        </h3>
+                        <p class="text-sm text-slate-300 leading-relaxed mb-8 text-justify relative z-10">
+                             山东农业大学农业大数据研究中心是由全国人大常委、山东省人大副主任、山东农业大学名誉校长温孚江教授于2013年5月主持成立。同年6月，倡导成立了农业大数据产业技术创新战略联盟，现有会员单位100余家，覆盖全国16个省市自治区。
+                             中心现有专兼职科研人员100余人，主要由数据科学与技术、计算机科学与技术、物联网工程、电子信息、计算数学、统计学及相关专业的专家组成。同时聘任复旦大学、台湾铭传大学、中国农科院、著名企业家等相关专家作为兼职教授，共同组成协同创新团队，开展协同创新研究。
+                             中心设有5个省部级科研创新平台-农业部全国农业农村信息化示范基地（技术创新型），农业农村部黄淮海智慧农业技术重点实验室、农业大数据山东省工程研究中心，大数据与农产品精致化市场服务省级协同创新中心，山东省数字农业工程技术研究中心；2个厅级科研创新平台-山东省国土资源厅新农村建设土地资源空间数据采集与利用实验室，山东省国土资源厅智慧村镇重点实验室；1个校级平台-山东农业大学智慧农业重点实验室；1个校企合作科技创新平台（山东农业大学亿利绿土地技术研究院）。
+                        </p>
+                        
+                        <div class="bg-[#1e293b] p-6 rounded-2xl border border-white/5 space-y-5 relative z-10">
+                            <div class="flex items-center gap-4">
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                                    <i data-lucide="mail" class="w-5 h-5 text-green-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-0.5">学术交流与联系邮箱</p>
+                                    <a href="mailto:xysun@sdau.edu.cn" class="text-green-400 hover:text-green-300 transition-colors text-sm font-mono font-bold">Lnewdream@163.com</a>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                                    <i data-lucide="map-pin" class="w-5 h-5 text-green-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-0.5">通讯地址</p>
+                                    <p class="text-slate-300 text-sm">山东省泰安市岱宗大街61号 (山东农业大学岱宗校区)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- 全局弹窗 -->
         <div id="detail-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
             <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modal-overlay"></div>
