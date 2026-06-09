@@ -3,272 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>植物病害知识查询与防治系统</title>
+    <title>多作物病害识别系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module" src="./js/main.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: #030712; color: #f1f5f9; }
-        .nav-btn { color: #94a3b8; font-size: 0.875rem; font-weight: 500; padding-bottom: 0.25rem; transition: all 0.3s; border-bottom: 2px solid transparent; }
-        .nav-btn:hover { color: #ffffff; }
-        .active-nav { color: #ffffff; border-bottom-color: #22c55e; }
+        [x-cloak] { display: none !important; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712; 
+            color: #f1f5f9;
+        }
+        .stat-card { background-color: #0f172a; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.03); }
         .main-card { background-color: #0f172a; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.05); }
-        .filter-btn.active-filter { background: rgba(34, 197, 94, 0.1) !important; color: #22c55e !important; border-color: rgba(34, 197, 94, 0.3) !important; }
-        .card-hover:hover { transform: translateY(-5px); border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 10px 30px -10px rgba(34, 197, 94, 0.1); }
-        .page-view { display: none; animation: fadeIn 0.4s ease-out forwards; }
-        .active-view { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .abstract-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; opacity: 0.5; }
-        .abstract-content.expanded { max-height: 500px; opacity: 1; }
-        .crop-card { overflow: hidden; position: relative; border-radius: 1.25rem; cursor: pointer; aspect-ratio: 3/4; border: 1px solid rgba(255,255,255,0.05); }
-        .crop-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
-        .crop-card:hover .crop-img { transform: scale(1.1); }
-        .crop-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(3,7,18,1) 0%, rgba(3,7,18,0.4) 50%, transparent 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; transition: background 0.3s; }
-        .crop-card:hover .crop-overlay { background: linear-gradient(to top, rgba(22,101,52,0.9) 0%, rgba(3,7,18,0.4) 60%, transparent 100%); }
+        .recent-item { background-color: #1e293b; border-radius: 1rem; padding: 1.2rem; }
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        #detail-modal:not(.hidden) #modal-content { transform: scale(1); opacity: 1; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .scan-line {
+            height: 2px;
+            background: #22c55e;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            animation: scanMove 2.5s infinite linear;
+            box-shadow: 0 0 15px #22c55e;
+            z-index: 10;
+        }
+        @keyframes scanMove { 0% { top: 0; } 100% { top: 100%; } }
+        .note-input { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.75rem; }
+        .note-input:focus { outline: none; border-color: #22c55e; background: rgba(255, 255, 255, 0.05); }
     </style>
 </head>
-<body>
+<body x-data="appHandler()">
     <nav class="flex items-center justify-between px-10 h-16 border-b border-white/5 bg-[#030712] fixed top-0 w-full z-50">
         <div class="flex items-center gap-3">
-            <div class="w-6 h-6 bg-green-500 rounded flex items-center justify-center"><i data-lucide="leaf" class="text-white w-4 h-4"></i></div>
-            <h1 class="text-lg font-bold tracking-tight">植物病害知识查询与防治系统</h1>
+            <div class="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
+                <i data-lucide="leaf" class="text-white w-4 h-4"></i>
+            </div>
+            <h1 class="text-lg font-bold tracking-tight">多作物病害识别系统</h1>
         </div>
-        <div class="flex gap-12" id="nav-menu">
-            <button data-target="knowledge" class="nav-btn active-nav">知识查询</button>
-            <button data-target="crops" class="nav-btn">病害图谱</button>
-            <button data-target="papers" class="nav-btn">科研论文</button>
-            <button data-target="records" class="nav-btn">农事记录</button>
-            <button data-target="refs" class="nav-btn">参考/说明</button>
-            <button data-target="about" class="nav-btn">使用与联系</button>
+        <div class="flex gap-12">
+            <button @click="tab = 'home'" :class="tab === 'home' ? 'text-white border-b-2 border-green-500' : 'text-slate-400'" class="text-sm font-medium pb-1 transition-all">诊断中心</button>
+            <button @click="tab = 'library'" :class="tab === 'library' ? 'text-white border-b-2 border-green-500' : 'text-slate-400'" class="text-sm font-medium pb-1 transition-all">病害百科库</button>
+            <button @click="tab = 'system'" :class="tab === 'system' ? 'text-white border-b-2 border-green-500' : 'text-slate-400'" class="text-sm font-medium pb-1 transition-all">系统参数</button>
         </div>
-        <div class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>在线查询</div>
+        <div class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            AI 推理引擎在线
+        </div>
     </nav>
 
-    <main class="pt-24 px-10 max-w-[1600px] mx-auto pb-10 relative">
-        <!-- 知识查询页 -->
-        <div id="view-knowledge" class="page-view active-view space-y-6">
-            <div class="main-card p-8 flex items-center justify-between gap-6">
-                <div class="relative flex-1">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                    <input type="text" id="search-input" placeholder="输入病害名称、作物或症状关键字实时搜索..." class="w-full bg-[#1e293b] text-white rounded-xl pl-12 pr-4 py-4 outline-none border border-white/5">
+    <main class="pt-24 px-10 max-w-[1600px] mx-auto pb-10">
+        <div x-show="tab === 'home'" x-transition:enter class="space-y-8">
+            <div class="grid grid-cols-4 gap-6">
+                <div class="stat-card">
+                    <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">训练图像总数</p>
+                    <h3 class="text-3xl font-black">138,499</h3>
                 </div>
-                <div class="flex gap-3" id="filter-tags">
-                    <button data-filter="all" class="filter-btn active-filter px-4 py-2 rounded-xl text-sm font-bold bg-[#1e293b] text-white">全部</button>
-                    <button data-filter="小麦" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-[#1e293b] text-slate-400">小麦</button>
-                    <button data-filter="葡萄" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-[#1e293b] text-slate-400">葡萄</button>
-                    <button data-filter="番茄" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-[#1e293b] text-slate-400">番茄</button>
-                    <button data-filter="苹果" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-[#1e293b] text-slate-400">苹果</button>
+                <div class="stat-card border-l-4 border-green-500">
+                    <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">覆盖作物种类</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-black">30</span>
+                        <span class="text-[10px] text-slate-600 font-bold">SPECIES</span>
+                    </div>
                 </div>
-            </div>
-            <div id="knowledge-grid" class="grid grid-cols-3 gap-6"></div>
-        </div>
-
-        <!-- 图谱 -->
-        <div id="view-crops" class="page-view space-y-6">
-            <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6"><div><h2 class="text-3xl font-black text-white">本地病害叶片图谱</h2><p class="text-green-500 text-xs font-bold tracking-[0.2em] mt-1">LOCAL DISEASE ATLAS</p></div></div>
-            <div id="crop-gallery" class="grid grid-cols-4 gap-6"></div>
-        </div>
-
-        <!-- 论文 -->
-        <div id="view-papers" class="page-view space-y-6">
-            <div class="border-b border-white/10 pb-4 mb-6"><h2 class="text-3xl font-black text-white">科研论文精选</h2></div>
-            <div id="papers-list" class="space-y-4"></div>
-        </div>
-
-        <!-- 农事记录 -->
-        <div id="view-records" class="page-view space-y-6">
-            <div class="flex items-center justify-between border-b border-white/10 pb-4"><h2 class="text-3xl font-black text-white">农事与防管记录中心</h2><div class="flex gap-3"><button id="btn-export" class="px-4 py-2 bg-[#1e293b] text-slate-300 rounded-lg text-sm font-bold flex items-center gap-2 hover:text-white transition-colors"><i data-lucide="download" class="w-4 h-4"></i>导出数据</button><button id="btn-clear" class="px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors rounded-lg text-sm font-bold flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i>清空</button></div></div>
-            <div class="main-card p-6 flex gap-4"><div class="flex-1 space-y-3"><input type="text" id="record-title" placeholder="输入记录标题" class="w-full bg-[#1e293b] text-white rounded-lg px-4 py-3 border border-white/5 text-sm outline-none focus:border-green-500"><textarea id="record-content" rows="2" placeholder="详细记录农事操作..." class="w-full bg-[#1e293b] text-white rounded-lg px-4 py-3 border border-white/5 text-sm outline-none focus:border-green-500"></textarea></div><button id="btn-add-record" class="bg-green-600 hover:bg-green-500 transition-colors text-white font-bold px-8 rounded-lg flex flex-col items-center justify-center gap-2"><i data-lucide="pen-tool" class="w-5 h-5"></i>保存</button></div>
-            <div id="record-list" class="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2"></div>
-        </div>
-
-        <!-- 系统参考 -->
-        <div id="view-refs" class="page-view space-y-8">
-            <div class="border-b border-white/10 pb-4"><h2 class="text-3xl font-black text-white">参考文献与系统说明</h2><p class="text-green-500 text-xs font-bold tracking-[0.2em] mt-1">REFERENCES & INSTRUCTIONS</p></div>
-            <div class="main-card p-8 border-2 border-green-500/40 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl"></div>
-                <h3 class="text-xs font-bold text-green-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i data-lucide="award" class="w-4 h-4"></i>投稿论文</h3>
-                <h2 class="text-2xl font-black text-white mb-2">《基于计算机视觉与大语言模型的植物病害诊断与问答》</h2>
-                <p class="text-slate-400 text-sm font-mono mb-4">投稿于期刊：<span class="text-white font-bold">《农业工程学报》</span></p>
-                <p class="text-slate-400 text-sm font-mono mb-4">作者：<span class="text-white font-bold">李歆梦，刁颖，李金山，赵亚茹，张兆栋，耿霞，孙晓勇※</span></p>
-                <p class="text-slate-400 text-sm font-mono mb-4">单位：<span class="text-white font-bold">山东农业大学信息科学与工程学院</span></p>
-                <p class="text-sm text-slate-300 leading-relaxed italic">本文提出了一种融合视觉识别与大语言模型（LLM）的病害诊断框架，实现高准确率病害识别与专业病害知识问答，有效解决了复杂农业环境下的病害特征提取与知识推理问题。</p>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-6">
-                <!-- 公开数据集 -->
-                <div class="main-card p-6 flex flex-col">
-                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 shrink-0"><i data-lucide="database" class="w-5 h-5 text-green-500"></i>公开数据集 (38)</h3>
-                    <ul class="space-y-3 text-sm text-slate-400 overflow-y-auto max-h-[500px] custom-scrollbar pr-4">
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">01.</span><a href="https://www.kaggle.com/datasets/vipoooool/new-plant-diseases-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/vipoooool/new-plant-diseases-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">02.</span><a href="https://www.kaggle.com/datasets/sujaykapadnis/banana-disease-recognition-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/sujaykapadnis/banana-disease-recognition-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">03.</span><a href="https://www.kaggle.com/datasets/ibrahimagabardiop/niayes-crops-disease-v2" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/ibrahimagabardiop/niayes-crops-disease-v2</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">04.</span><a href="https://www.kaggle.com/c/cassava-leaf-disease-classification/data" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/c/cassava-leaf-disease-classification/data</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">05.</span><a href="https://www.kaggle.com/datasets/lavaman151/plantifydr-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/lavaman151/plantifydr-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">06.</span><a href="https://www.kaggle.com/datasets/dhenyd/chili-plant-disease" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/dhenyd/chili-plant-disease</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">07.</span><a href="https://www.kaggle.com/datasets/prudhvi143413s/anthracnose-disease-in-chilli-mobile-captured" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/prudhvi143413s/anthracnose-disease-in-chilli-mobile-captured</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">08.</span><a href="https://www.kaggle.com/datasets/sourabh2001/citrus-leaves-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/sourabh2001/citrus-leaves-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">09.</span><a href="https://www.kaggle.com/datasets/niharipriya/citrus-plant-disease-image-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/niharipriya/citrus-plant-disease-image-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">10.</span><a href="https://www.kaggle.com/datasets/dhamur/cotton-plant-disease" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/dhamur/cotton-plant-disease</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">11.</span><a href="https://www.kaggle.com/datasets/sujaykapadnis/cucumber-disease-recognition-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/sujaykapadnis/cucumber-disease-recognition-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">12.</span><a href="https://www.kaggle.com/datasets/sujaykapadnis/eggplant-disease-recognition-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/sujaykapadnis/eggplant-disease-recognition-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">13.</span><a href="https://github.com/gabrieldgf4/PlantVillage-Dataset/tree/master" target="_blank" class="hover:text-white break-all transition-colors">https://github.com/gabrieldgf4/PlantVillage-Dataset/tree/master</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">14.</span><a href="https://github.com/smaranjitghose/corn_pathology_ai" target="_blank" class="hover:text-white break-all transition-colors">https://github.com/smaranjitghose/corn_pathology_ai</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">15.</span><a href="https://www.kaggle.com/datasets/srijonashraf/maize-crop-disease-dataset-splitted" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/srijonashraf/maize-crop-disease-dataset-splitted</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">16.</span><a href="https://www.kaggle.com/datasets/santoshshaha/lettuce-plant-disease-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/santoshshaha/lettuce-plant-disease-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">17.</span><a href="https://www.kaggle.com/datasets/rajsingh365/millet-crop-healthyrustblast" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/rajsingh365/millet-crop-healthyrustblast</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">18.</span><a href="https://data.mendeley.com/datasets/3pmj85snvw/1" target="_blank" class="hover:text-white break-all transition-colors">https://data.mendeley.com/datasets/3pmj85snvw/1</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">19.</span><a href="https://www.kaggle.com/datasets/zunorain/pea-plant-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/zunorain/pea-plant-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">20.</span><a href="https://www.kaggle.com/datasets/warcoder/groundnut-plant-leaf-data" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/warcoder/groundnut-plant-leaf-data</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">21.</span><a href="https://www.kaggle.com/datasets/yajurkhanna2/diamos-pear-leaves" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/yajurkhanna2/diamos-pear-leaves</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">22.</span><a href="https://www.kaggle.com/datasets/tahmidmir/pumpkin-leaf-diseases-dataset-from-bangladesh" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/tahmidmir/pumpkin-leaf-diseases-dataset-from-bangladesh</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">23.</span><a href="https://www.kaggle.com/datasets/nirmalsankalana/potato-leaf-healthy-and-late-blight" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/nirmalsankalana/potato-leaf-healthy-and-late-blight</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">24.</span><a href="https://www.kaggle.com/datasets/loki4514/rice-leaf-diseases-detection" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/loki4514/rice-leaf-diseases-detection</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">25.</span><a href="https://data.mendeley.com/datasets/fgb3cmfrg2/1" target="_blank" class="hover:text-white break-all transition-colors">https://data.mendeley.com/datasets/fgb3cmfrg2/1</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">26.</span><a href="https://www.kaggle.com/datasets/mamun009/soybean-leaf-image-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/mamun009/soybean-leaf-image-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">27.</span><a href="https://www.kaggle.com/datasets/shuvoalok98/soybean-disease-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/shuvoalok98/soybean-disease-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">28.</span><a href="https://www.kaggle.com/datasets/lavaman151/plantifydr-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/lavaman151/plantifydr-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">29.</span><a href="https://www.kaggle.com/datasets/joonasyoon/sorghum-fgvc9-clahe-512?select=test" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/joonasyoon/sorghum-fgvc9-clahe-512?select=test</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">30.</span><a href="https://aistudio.baidu.com/datasetdetail/185712/0" target="_blank" class="hover:text-white break-all transition-colors">https://aistudio.baidu.com/datasetdetail/185712/0</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">31.</span><a href="http://doi.org/10.5061/dryad.41ns1rnj3" target="_blank" class="hover:text-white break-all transition-colors">http://doi.org/10.5061/dryad.41ns1rnj3</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">32.</span><a href="https://data.mendeley.com/datasets/9424skmnrk/1" target="_blank" class="hover:text-white break-all transition-colors">https://data.mendeley.com/datasets/9424skmnrk/1</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">33.</span><a href="https://data.mendeley.com/datasets/b83hmrzth8/1" target="_blank" class="hover:text-white break-all transition-colors">https://data.mendeley.com/datasets/b83hmrzth8/1</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">34.</span><a href="https://www.kaggle.com/datasets/saikatdatta1994/tea-leaf-disease" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/saikatdatta1994/tea-leaf-disease</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">35.</span><a href="https://www.kaggle.com/datasets/noulam/tomato" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/noulam/tomato</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">36.</span><a href="https://www.kaggle.com/datasets/sujaykapadnis/watermelon-disease-recognition-dataset" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/sujaykapadnis/watermelon-disease-recognition-dataset</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">37.</span><a href="https://www.kaggle.com/datasets/kushagra3204/wheat-plant-diseases" target="_blank" class="hover:text-white break-all transition-colors">https://www.kaggle.com/datasets/kushagra3204/wheat-plant-diseases</a></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 font-mono mt-0.5 shrink-0">38.</span><a href="https://github.com/spMohanty/PlantVillage-Dataset" target="_blank" class="hover:text-white break-all transition-colors">https://github.com/spMohanty/PlantVillage-Dataset</a></li>
-                    </ul>
+                <div class="stat-card">
+                    <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">识别病害库</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-black">157</span>
+                        <span class="text-[10px] text-slate-600 font-bold">CLASSES</span>
+                    </div>
                 </div>
-
-                <!-- 参考文献 -->
-                <div class="main-card p-6 flex flex-col">
-                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 shrink-0"><i data-lucide="book-marked" class="w-5 h-5 text-green-500"></i>参考文献 (25)</h3>
-                    <ul class="space-y-4 text-sm text-slate-400 overflow-y-auto max-h-[500px] custom-scrollbar pr-4">
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[1]</span>Zhang K., Wu Q., Chen Y. Detecting soybean leaf disease from synthetic image using multi-feature fusion faster R-CNN. Computers and Electronics in Agriculture, 2021. 183, 106064.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[2]</span>Vaswani A., Shazeer N., Parmar N., et al., Attention is all you need. Advances in neural information processing systems, 2017. 30.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[3]</span>Koroteev M.V. BERT: a review of applications in natural language processing and understanding. arXiv preprint arXiv. 2021. 2103,11943.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[4]</span>Bubeck S., Coester C., Eldan R., et al., Early science acceleration experiments with GPT-5. arXiv preprint arXiv. 2025. 2511, 16072.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[5]</span>Dubey A., Jauhri A., Pandey A., et al., The llama 3 herd of models. arxiv preprint arxiv, 2024. 2407, 21783.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[6]</span>Lewis P., Perez E., Piktus A., et al., Retrieval-augmented generation for knowledge-intensive nlp tasks. Advances in neural information processing systems, 2020. 33, 9459-9474.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[7]</span>Silva B., Nunes L., Estevão R., et al., GPT-4 as an agronomist assistant? Answering agriculture exams using large language models. arxiv preprint arxiv, 2023. 2310, 06225.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[8]</span>Kuska M.T, Wahabzada M., Paulus S., AI for crop production–Where can large language models (LLMs) provide substantial value? Computers and Electronics in Agriculture, 2024. 221, 108924.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[9]</span>Sapkota R., Karkee M., Creating image datasets in agricultural environments using DALL. E: generative AI-powered large language model. arxiv preprint arxiv, 2023. 2307, 08789.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[10]</span>Li J., Xu M., Xiang L., et al., Foundation models in smart agriculture: Basics, opportunities, and challenges. Computers and Electronics in Agriculture, 2024. 222, 109032.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[11]</span>Qing J., Deng X., Lan Y., et al., GPT-aided diagnosis on agricultural image based on a new light YOLOPC. Computers and electronics in agriculture, 2023. 213, 108168.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[12]</span>Fones N.H., Bebber P.D., Chaloner, M.T., et al., Threats to global food security from emerging fungal and oomycete crop pathogens. Nature Food, 2020. 1, 332-342.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[13]</span>Taimur M.A., Yan L., Bo S., et al., Comparison of CNN-based deep learning architectures for rice diseases classification. Artificial Intelligence in Agriculture, 2023. 9, 22-35.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[14]</span>王耀君, 徐国威, 朱建军, 等. 农业领域大语言模型研究进展[J]. 农业机械学报, 2025, 56(09): 240-256.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[15]</span>Kuska M.T, Wahabzada M., Paulus S., AI for crop production–Where can large language models (LLMs) provide substantial value? Computers and Electronics in Agriculture, 2024. 221, 108924.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[16]</span>曹冰雪，赵春江，李瑾，等. 中国智慧农业技术发展现状、挑战与展望[J]. 农业工程学报，2025，41(21)：1-10.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[17]</span>Awais M, Alharthi A H S A, Kumar A, et al. Agrogpt: Efficient agricultural vision-language model with expert tuning. CVF Winter Conference on Applications of Computer Vision (WACV). IEEE, 2025. 5687-5696.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[18]</span>Yan C., Liang Z., Cheng H., et al. CDIP-ChatGLM3: A dual-model approach integrating computer vision and language modeling for crop disease identification and prescription. Computers and Electronics in Agriculture, 2025. 236, 110442.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[19]</span>Zhu H., Shi W., Guo X., et al., Potato disease detection and prevention using multimodal AI and large language model. Computers and Electronics in Agriculture, 2025. 229, 109824.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[20]</span>Jiang J., Yan L., Liu H., et al., Knowledge assimilation: Implementing knowledge-guided agricultural large language model. Knowledge-based systems, 2025. 314, 113197.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[21]</span>Zhang R., Wang Y., Yang W., et al., PlantGPT: An Arabidopsis‐Based Intelligent Agent that Answers Questions about Plant Functional Genomics. Advanced Science, 2025. e03926.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[22]</span>Liu Z., Lin Y., Cao Y., et al., Swin transformer: Hierarchical vision transformer using shifted windows. Proceedings of the IEEE/CVF international conference on computer vision, 2021. 10012-10022.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[23]</span>Nazmus Sakib S., Haque N., Zabed Hossain M., et al., PlantVillageVQA: A Visual Question Answering Dataset for Benchmarking Vision-Language Models in Plant Science. arxiv preprint arxiv, 2025. 2508.17117.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[24]</span>Wang L., Jin T., Yang J., et al., Agri-llava: Knowledge-infused large multimodal assistant on agricultural pests and diseases. arXiv preprint arXiv, 2024.2412.02158.</li>
-                        <li class="leading-relaxed"><span class="text-green-500 font-bold mr-1">[25]</span>Elangovan A., Liu L., Xu L., et al., Considers-the-human evaluation framework: Rethinking human evaluation for generative large language models. ACL Anthology, 2024. 1137-1160.</li>
-                    </ul>
+                <div class="stat-card">
+                    <p class="text-[10px] text-slate-500 font-bold mb-2 uppercase">平均识别精度</p>
+                    <h3 class="text-3xl font-black text-green-500">98.<span class="text-xl">0%</span></h3>
                 </div>
-            </div>
-        </div>
-        <!-- 系统使用说明与联系我们页 -->
-        <div id="view-about" class="page-view space-y-8">
-            <div class="border-b border-white/10 pb-4">
-                <h2 class="text-3xl font-black text-white">系统使用说明与联系我们</h2>
-                <p class="text-green-500 text-xs font-bold tracking-[0.2em] mt-1">USER MANUAL & CONTACT</p>
             </div>
 
             <div class="grid grid-cols-12 gap-8">
-                <!-- 左侧：使用说明 -->
-                <div class="col-span-7 space-y-6">
-                    <div class="main-card p-8 h-full">
-                        <h3 class="text-xl font-bold text-white mb-8 flex items-center gap-3">
-                            <i data-lucide="book-open-check" class="text-green-500 w-6 h-6"></i>系统功能与操作指南
-                        </h3>
-                        <div class="space-y-8">
-                            <div class="flex gap-4">
-                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20">
-                                    <span class="text-green-500 font-bold">1</span>
-                                </div>
-                                <div>
-                                    <h4 class="text-white font-bold text-lg mb-2">多维知识检索与防管转化</h4>
-                                    <p class="text-sm text-slate-400 leading-relaxed">本系统提供纯前端毫秒级检索。在「知识查询」页，您可以通过输入作物、病害名称搜索权威防治方案。点击卡片右下角的“加入防管记录”，即可将专家级方案一键转存至您的本地日程中。</p>
-                                </div>
+                <div class="col-span-8 main-card p-12 min-h-[560px] flex flex-col items-center justify-center relative overflow-hidden">
+                    <input type="file" id="fileInput" class="hidden" accept="image/*" @change="onFileChange">
+                    <div x-show="!previewImage && !isAnalyzing" @click="document.getElementById('fileInput').click()" class="text-center group cursor-pointer transition-transform hover:scale-105">
+                        <div class="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/20 group-hover:bg-green-500/20">
+                            <i data-lucide="cloud-upload" class="w-10 h-10 text-green-500"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2">上传植物叶片进行分类识别</h2>
+                        <p class="text-slate-500 text-sm">支持 JPG, PNG 格式，AI 将自动分析特征并匹配 157 种已知病害</p>
+                    </div>
+                    <div x-show="previewImage || isAnalyzing" x-cloak class="w-full h-full flex flex-col items-center">
+                        <div class="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-2xl">
+                            <img :src="previewImage" class="w-full h-full object-contain">
+                            <div x-show="isAnalyzing" class="scan-line"></div>
+                            <div x-show="isAnalyzing" class="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+                                <p class="text-green-500 mono font-bold tracking-[0.3em] animate-pulse">CLASSIFYING...</p>
                             </div>
-                            <div class="flex gap-4">
-                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20">
-                                    <span class="text-green-500 font-bold">2</span>
-                                </div>
-                                <div>
-                                    <h4 class="text-white font-bold text-lg mb-2">文献追踪与图谱比对</h4>
-                                    <p class="text-sm text-slate-400 leading-relaxed">在「科研论文」页，汇聚了前沿农学期刊的文献摘要，点击可展开阅读，并支持一键收藏留痕；在「病健图谱」页，您可以对照本地高精度叶片样本，及早发现田间潜在风险。</p>
-                                </div>
+                        </div>
+                        <div x-show="result" class="mt-8 w-full max-w-2xl flex items-center gap-8 bg-white/5 p-8 rounded-2xl border border-white/10 animate-in fade-in zoom-in duration-300">
+                            <div class="flex-1">
+                                <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">识别结论 (Result)</div>
+                                <h4 class="text-3xl font-black text-white" x-text="result.name"></h4>
+                                <p class="text-xs text-slate-400 mt-1 italic" x-text="result.latin"></p>
                             </div>
-                            <div class="flex gap-4">
-                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20">
-                                    <span class="text-green-500 font-bold">3</span>
-                                </div>
-                                <div>
-                                    <h4 class="text-white font-bold text-lg mb-2">极致安全的本地数据留痕</h4>
-                                    <p class="text-sm text-slate-400 leading-relaxed">本系统采用无后端(Serverless)先进架构。您在系统内产生的所有农事记录、检索痕迹、文献收藏，均加密保存在您当前浏览器的本地存储(Local Storage)中。支持随时一键导出 JSON 文件备份，保护农业数据隐私。</p>
-                                </div>
+                            <div class="text-right">
+                                <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">置信概率</div>
+                                <div class="text-3xl font-black text-green-500" x-text="result.conf"></div>
                             </div>
+                            <button @click="reset()" class="p-2 hover:bg-white/10 rounded-full transition-colors"><i data-lucide="rotate-ccw" class="w-5 h-5 text-slate-500"></i></button>
+                        </div>
+                        <div x-show="previewImage && !isAnalyzing && !result" class="mt-8 flex gap-4">
+                            <button @click="startAnalysis()" class="px-10 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-900/40">执行智能分类</button>
+                            <button @click="reset()" class="px-10 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl">重置上传</button>
                         </div>
                     </div>
                 </div>
-                <!-- 联系我们 -->
-                <div class="col-span-5 space-y-6">
-                    <div class="main-card p-8 border-t-4 border-green-500 relative overflow-hidden h-full">
-                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-green-500/10 rounded-full blur-3xl"></div>
-                        <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3 relative z-10">
-                            <i data-lucide="building-2" class="text-green-500 w-6 h-6"></i>山东农业大学大数据中心
-                        </h3>
-                        <p class="text-sm text-slate-300 leading-relaxed mb-8 text-justify relative z-10">
-                             山东农业大学农业大数据研究中心是由全国人大常委、山东省人大副主任、山东农业大学名誉校长温孚江教授于2013年5月主持成立。同年6月，倡导成立了农业大数据产业技术创新战略联盟，现有会员单位100余家，覆盖全国16个省市自治区。
-                             中心现有专兼职科研人员100余人，主要由数据科学与技术、计算机科学与技术、物联网工程、电子信息、计算数学、统计学及相关专业的专家组成。同时聘任复旦大学、台湾铭传大学、中国农科院、著名企业家等相关专家作为兼职教授，共同组成协同创新团队，开展协同创新研究。
-                             中心设有5个省部级科研创新平台-农业部全国农业农村信息化示范基地（技术创新型），农业农村部黄淮海智慧农业技术重点实验室、农业大数据山东省工程研究中心，大数据与农产品精致化市场服务省级协同创新中心，山东省数字农业工程技术研究中心；2个厅级科研创新平台-山东省国土资源厅新农村建设土地资源空间数据采集与利用实验室，山东省国土资源厅智慧村镇重点实验室；1个校级平台-山东农业大学智慧农业重点实验室；1个校企合作科技创新平台（山东农业大学亿利绿土地技术研究院）。
-                        </p>
-                        
-                        <div class="bg-[#1e293b] p-6 rounded-2xl border border-white/5 space-y-5 relative z-10">
-                            <div class="flex items-center gap-4">
-                            </div>
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-                                    <i data-lucide="mail" class="w-5 h-5 text-green-500"></i>
+                <div class="col-span-4 main-card p-8 border border-white/5 flex flex-col">
+                    <h3 class="flex items-center gap-3 text-slate-400 font-bold mb-8 uppercase text-xs tracking-widest">
+                        <i data-lucide="history" class="w-4 h-4"></i> 最近诊断记录
+                    </h3>
+                    <div class="space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                        <template x-for="rec in recentHistory">
+                            <div class="recent-item hover:bg-[#263147] transition-all cursor-pointer group border border-transparent hover:border-green-500/20">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="font-bold text-slate-200 group-hover:text-green-400 transition-colors" x-text="rec.name"></span>
+                                    <span class="text-green-500 font-black text-xs mono" x-text="rec.conf"></span>
                                 </div>
-                                <div>
-                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-0.5">学术交流与联系邮箱</p>
-                                    <a href="mailto:xysun@sdau.edu.cn" class="text-green-400 hover:text-green-300 transition-colors text-sm font-mono font-bold">Lnewdream@163.com</a>
+                                <div class="flex justify-between items-center text-[10px] text-slate-500 font-bold italic uppercase tracking-tighter">
+                                    <span x-text="rec.crop"></span>
+                                    <span x-text="rec.time"></span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-                                    <i data-lucide="map-pin" class="w-5 h-5 text-green-500"></i>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-0.5">通讯地址</p>
-                                    <p class="text-slate-300 text-sm">山东省泰安市岱宗大街61号 (山东农业大学岱宗校区)</p>
-                                </div>
-                            </div>
-                        </div>
+                        </template>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- 全局弹窗 -->
-        <div id="detail-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
-            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modal-overlay"></div>
-            <div class="relative bg-[#0f172a] border border-white/10 w-full max-w-3xl rounded-3xl p-10 shadow-2xl scale-95 opacity-0 transition-all" id="modal-content">
-                <button id="close-modal" class="absolute top-6 right-6 text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-                <div id="modal-body"></div>
+        <div x-show="tab === 'library'" x-transition x-cloak class="grid grid-cols-12 gap-8 h-[calc(100vh-200px)]">
+            <aside class="col-span-3 main-card overflow-hidden flex flex-col">
+                <div class="p-4 bg-white/5 border-b border-white/5 text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase text-center">作物物种索引</div>
+                <div class="flex-1 overflow-y-auto custom-scrollbar">
+                    <template x-for="c in db">
+                        <button @click="activeCrop = c" :class="activeCrop.name === c.name ? 'bg-green-600/10 text-green-500 border-r-4 border-green-600' : 'text-slate-400 hover:bg-white/5'" class="w-full text-left px-6 py-5 transition-all flex items-center gap-4">
+                            <span class="text-2xl" x-text="c.icon"></span>
+                            <span class="font-bold text-sm" x-text="c.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </aside>
+
+            <section class="col-span-9 main-card p-10 overflow-y-auto custom-scrollbar">
+                <template x-if="activeCrop">
+                    <div class="animate-in slide-in-from-bottom-4 duration-500">
+                        <div class="flex items-end gap-6 mb-12 border-b border-white/5 pb-8">
+                            <span class="text-7xl" x-text="activeCrop.icon"></span>
+                            <div>
+                                <h2 class="text-5xl font-black tracking-tighter uppercase" x-text="activeCrop.name"></h2>
+                                <p class="text-green-500 text-xs font-bold uppercase tracking-[0.4em] mt-3">Objective Pathological Knowledge Base</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-10">
+                            <template x-for="d in activeCrop.diseases">
+                                <div class="p-8 bg-white/5 rounded-2xl border border-white/5">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h4 class="text-2xl font-bold text-white flex items-center gap-3">
+                                            <span class="w-1.5 h-6 bg-green-500 rounded-full"></span>
+                                            <span x-text="d.name"></span>
+                                        </h4>
+                                        <span class="mono text-[10px] text-slate-500 tracking-widest uppercase font-bold" x-text="'TAG: ' + d.tag"></span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-10">
+                                        <div>
+                                            <h5 class="text-[10px] text-slate-500 font-bold uppercase mb-3 flex items-center gap-2 tracking-widest italic">
+                                                <i data-lucide="info" class="w-3 h-3"></i> 典型病理表征
+                                            </h5>
+                                            <p class="text-sm text-slate-300 leading-relaxed text-justify" x-text="d.symptom"></p>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-[10px] text-slate-500 font-bold uppercase mb-3 flex items-center gap-2 tracking-widest italic">
+                                                <i data-lucide="shield-check" class="w-3 h-3"></i> 推荐治理方案
+                                            </h5>
+                                            <p class="text-sm text-slate-300 leading-relaxed text-justify" x-text="d.control"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="mt-16 pt-10 border-t border-white/10">
+                            <div class="flex items-center justify-between mb-8">
+                                <h3 class="text-2xl font-black flex items-center gap-3 italic">
+                                    <i data-lucide="notebook-pen" class="text-green-500"></i>
+                                    农事观察笔记
+                                </h3>
+                                <span class="text-[10px] text-slate-500 tracking-widest uppercase mono" x-text="`TOTAL NOTES: ${notes.length}`"></span>
+                            </div>
+                            <div class="bg-white/5 p-8 rounded-3xl border border-white/10 mb-10 shadow-xl">
+                                <div class="space-y-4">
+                                    <input type="text" x-model="newNoteTitle" placeholder="输入笔记标题 (例如：XX示范园观察记录)..." class="w-full px-6 py-4 note-input text-sm text-white mono">
+                                    <textarea x-model="newNoteContent" rows="3" placeholder="在此记录您的观察心得、病害发生程度或用药反馈..." class="w-full px-6 py-4 note-input text-sm text-white leading-relaxed custom-scrollbar"></textarea>
+                                    <div class="flex justify-end">
+                                        <button @click="addNote()" class="flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-green-900/20">
+                                            <i data-lucide="plus" class="w-4 h-4"></i> 保存随记
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-4">
+                                <template x-for="(note, index) in notes" :key="index">
+                                    <div class="p-6 bg-[#0f172a] border border-white/5 rounded-2xl flex items-start justify-between group hover:border-green-500/30 transition-all">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                                <h4 class="font-bold text-slate-200" x-text="note.title"></h4>
+                                                <span class="text-[10px] text-slate-500 mono" x-text="note.time"></span>
+                                            </div>
+                                            <p class="text-sm text-slate-400 leading-relaxed" x-text="note.content"></p>
+                                        </div>
+                                        <button @click="deleteNote(index)" class="opacity-0 group-hover:opacity-100 p-2 text-slate-600 hover:text-red-500 transition-all">
+                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                                <div x-show="notes.length === 0" class="py-12 border-2 border-dashed border-white/5 rounded-3xl text-center text-slate-600 text-sm italic">
+                                    暂无笔记记录，点击上方保存您的第一条农事观察日志
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </section>
+        </div>
+        <div x-show="tab === 'system'" x-transition x-cloak class="max-w-5xl mx-auto space-y-8">
+            <div class="main-card p-12 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-[100px]"></div>
+                <h2 class="text-4xl font-black mb-10 tracking-tight">神经网络模型架构规范</h2>
+                
+                <div class="grid grid-cols-2 gap-16">
+                    <div class="space-y-8">
+                        <div>
+                            <h4 class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 italic">分类骨干网络 (Backbone)</h4>
+                            <p class="text-2xl font-bold text-white tracking-tight">Swin-Tiny</p>
+                        </div>
+                        <div>
+                            <h4 class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 italic">预训练数据集</h4>
+                            <p class="text-2xl font-bold text-white tracking-tight italic uppercase">AgriPlant-138k</p>
+                        </div>
+                    </div>
+                    <div class="space-y-8 border-l border-white/5 pl-16">
+                        <div>
+                            <h4 class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 italic">输入分辨率</h4>
+                            <p class="text-2xl font-bold text-white mono uppercase">448 × 448 (RGB)</p>
+                        </div>
+                        <div>
+                            <h4 class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 italic">学习率衰减策略</h4>
+                            <p class="text-2xl font-bold text-white mono uppercase italic">Cosine Annealing</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
+    <script>
+        lucide.createIcons();
+        function appHandler() {
+            return {
+                tab: 'home',
+                previewImage: null,
+                isAnalyzing: false,
+                result: null,
+                activeCrop: null,
+                newNoteTitle: '',
+                newNoteContent: '',
+                notes: [
+                    { title: '大棚1区水稻生长观察', content: '发现稻瘟病初期迹象，叶片有少量梭形斑点，置信度极高，建议下午即刻开始喷药。', time: '2023.10.27 09:15' }
+                ],
+
+                init() {
+                    this.activeCrop = this.db[0];
+                    this.$watch('notes', () => this.$nextTick(() => lucide.createIcons()));
+                },
+                addNote() {
+                    if (!this.newNoteTitle || !this.newNoteContent) return;
+                    const now = new Date();
+                    const timeStr = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+                    this.notes.unshift({
+                        title: this.newNoteTitle,
+                        content: this.newNoteContent,
+                        time: timeStr
+                    });
+                    this.newNoteTitle = '';
+                    this.newNoteContent = '';
+                },
+
+                deleteNote(index) {
+                    this.notes.splice(index, 1);
+                },
+                onFileChange(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            this.previewImage = event.target.result;
+                            this.result = null;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                },
+                startAnalysis() {
+                    this.isAnalyzing = true;
+                    setTimeout(() => {
+                        this.isAnalyzing = false;
+                        this.result = {
+                            name: '马铃薯晚疫病',
+                            latin: 'Phytophthora infestans (Mont.) de Bary',
+                            conf: '99.41%'
+                        };
+                    }, 2500);
+                },
+                reset() {
+                    this.previewImage = null;
+                    this.result = null;
+                    this.isAnalyzing = false;
+                    document.getElementById('fileInput').value = '';
+                },
+                db: [
+                    { 
+                        name: '水稻 (Rice)', icon: '🌾', 
+                        diseases: [
+                            { tag: 'RIC-BL-01', name: '稻瘟病', symptom: '叶部病斑呈梭形，中心灰白色，边缘红褐色。环境潮湿时病斑背面产生灰绿色霉层。', control: '种子用三环唑消毒；发病期使用春雷霉素或稻瘟灵进行药剂防治。' },
+                            { tag: 'RIC-SB-02', name: '纹枯病', symptom: '在叶鞘上初生椭圆暗绿色水渍状病斑，逐渐扩大成云纹状。', control: '控制施氮，增施磷钾肥；喷施井冈霉素或苯甲·丙环唑。' }
+                        ]
+                    },
+                    { 
+                        name: '马铃薯 (Potato)', icon: '🥔', 
+                        diseases: [
+                            { tag: 'POT-LB-01', name: '晚疫病', symptom: '叶尖或叶缘产生暗绿色水渍状斑，湿度大时生出一圈白霉。', control: '加强产地检疫，发病初期喷施氟菌·霜霉威或氟啶胺制剂。' }
+                        ]
+                    },
+                    { 
+                        name: '番茄 (Tomato)', icon: '🍅', 
+                        diseases: [
+                            { tag: 'TOM-EB-01', name: '早疫病', symptom: '叶片病斑呈深褐色圆形，具同心轮纹。老叶先发病，由下而上蔓延。', control: '发病初期喷施百菌清或代森锰锌，注意棚室通风排湿。' }
+                        ]
+                    },
+                    { 
+                        name: '玉米 (Corn)', icon: '🌽', 
+                        diseases: [
+                            { tag: 'COR-LB-01', name: '大斑病', symptom: '叶片形成长梭形灰褐色病斑，严重时叶片焦枯。', control: '选用抗病品种；发病初期喷施多菌灵或代森锌粉剂进行防治。' }
+                        ]
+                    }
+                ],
+
+                recentHistory: [
+                    { name: '马铃薯晚疫病', conf: '98.5%', crop: '马铃薯', time: '10分钟前' },
+                    { name: '水稻稻瘟病', conf: '94.2%', crop: '水稻', time: '2小时前' },
+                    { name: '番茄早疫病', conf: '89.1%', crop: '番茄', time: '5小时前' },
+                    { name: '苹果褐斑病', conf: '97.2%', crop: '苹果', time: '1天前' }
+                ]
+            }
+        }
+    </script>
 </body>
 </html>
